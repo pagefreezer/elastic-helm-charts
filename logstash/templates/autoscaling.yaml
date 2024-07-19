@@ -1,0 +1,46 @@
+{{- if .Values.autoscaling.enabled -}}
+{{- $fullName := include "logstash.fullname" . -}}
+{{- $Autoscaling := deepCopy .Values.autoscaling -}}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ printf "%s-%s" $fullName "scaledobject" | quote }}
+  labels:
+    app: {{ $fullName | quote }}
+    chart: {{ $.Chart.Name | quote }}
+    heritage: {{ $.Release.Service | quote }}
+    release: {{ $.Release.Name | quote }}
+    {{- range $key, $value := $.Values.labels }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  scaleTargetRef:
+    kind: StatefulSet
+    name: {{ $fullName | quote }}
+  minReplicaCount: {{ $Autoscaling.minReplicas }}
+  maxReplicaCount: {{ $Autoscaling.maxReplicas }}
+  advanced:
+    restoreToOriginalReplicaCount: false
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: {{ $Autoscaling.scaleDownStabilizationSeconds }}
+        scaleUp:
+          stabilizationWindowSeconds: {{ $Autoscaling.scaleUpStabilizationSeconds }} 
+  triggers:
+    {{- if  $Autoscaling.targetCPUUtilizationPercentage }}
+    - type: cpu
+      metricType: Utilization
+      metadata:
+        value: {{ $Autoscaling.targetCPUUtilizationPercentage | quote }}
+        containerName: {{ $Autoscaling.containerName | quote }}
+    {{- end }}
+    {{- if $Autoscaling.targetMemoryUtilizationPercentage }}
+    - type: memory
+      metricType: Utilization
+      metadata:
+        value: {{ $Autoscaling.targetMemoryUtilizationPercentage | quote }}
+        containerName: {{ $Autoscaling.containerName | quote }}
+    {{- end }}
+{{- end }}

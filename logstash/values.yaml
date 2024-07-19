@@ -248,6 +248,8 @@ schedulerName: ""
 nodeSelector: {}
 tolerations: []
 
+topologySpreadConstraints: []
+
 nameOverride: ""
 fullnameOverride: ""
 
@@ -293,3 +295,13 @@ ingress:
   #  - secretName: logstash-example-tls
   #    hosts:
   #      - logstash-example.local
+
+autoscaling:
+    enabled: false
+    minReplicas: "2"
+    maxReplicas: "10"
+    scaleDownStabilizationSeconds: "300"
+    scaleUpStabilizationSeconds: "300"
+    targetCPUUtilizationPercentage: "80"
+    targetMemoryUtilizationPercentage: "80"
+    containerName: "logstash"
